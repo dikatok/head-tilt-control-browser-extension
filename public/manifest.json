@@ -1,0 +1,16 @@
+{
+  "browser_action": {
+    "default_popup": "index.html",
+    "default_title": "Head Tilt Control"
+  },
+  "icons": {
+    "16": "favicon.ico",
+    "48": "logo192.png",
+    "128": "logo512.png"
+  },
+  "manifest_version": 2,
+  "name": "Head Tilt Control",
+  "permissions": ["tabs", "http://*/*", "https://*/*"],
+  "short_name": "React App",
+  "version": "0.0.1"
+}
