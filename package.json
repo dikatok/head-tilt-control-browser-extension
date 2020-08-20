@@ -3,6 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@tensorflow-models/facemesh": "^0.0.4",
+    "@tensorflow/tfjs-backend-wasm": "^2.3.0",
+    "@tensorflow/tfjs-backend-webgl": "^2.3.0",
+    "@tensorflow/tfjs-converter": "^2.3.0",
+    "@tensorflow/tfjs-core": "^2.3.0",
     "react": "^16.13.1",
     "react-dom": "^16.13.1"
   },
