@@ -7,6 +7,7 @@ import React, {
   useRef,
   useState
 } from 'react';
+import { browser } from 'webextension-polyfill-ts';
 import './App.css';
 import { TiltDegrees } from './types';
 import { calculateTiltDegrees, predictTiltLandmarks } from './utils';
@@ -39,46 +40,40 @@ function App(): ReactElement {
   }, []);
 
   useEffect(() => {
-    queue.each((command) => {
-      if (command === 'none' || !chrome.tabs || !chrome.windows) return;
+    queue.each(async (command) => {
+      if (command === 'none' || !browser.tabs || !browser.windows) return;
 
       if (command === 'prev_tab' || command === 'next_tab') {
-        chrome.tabs.query({ currentWindow: true }, (tabs) => {
-          if (tabs.length <= 1) return;
+        const tabs = await browser.tabs.query({ currentWindow: true });
 
-          const currentTab = tabs.findIndex((tab) => tab.active);
-          chrome.tabs.update(
-            tabs[currentTab]?.id as number,
-            { highlighted: false, active: false, selected: false },
-            console.log
-          );
+        if (tabs.length <= 1) return;
 
-          const movement = command === 'prev_tab' ? -1 : 1;
-          const nextTabIndex = (currentTab + movement) % tabs.length;
-          const nextTab = tabs[nextTabIndex];
-          chrome.tabs.update(
-            nextTab?.id as number,
-            { highlighted: true, active: true, selected: true },
-            console.log
-          );
+        const currentTabIndex = tabs.findIndex((tab) => tab.active);
+        const currentTab = tabs[currentTabIndex];
+        await browser.tabs.update(currentTab.id, {
+          highlighted: false,
+          active: false
         });
 
-        return;
-      }
+        const delta = command === 'prev_tab' ? -1 : 1;
+        const nextTabIndex = (currentTabIndex + delta) % tabs.length;
+        const nextTab = tabs[nextTabIndex];
+        await browser.tabs.update(nextTab.id, {
+          highlighted: true,
+          active: true
+        });
+      } else {
+        const window = await browser.windows.getCurrent();
 
-      chrome.windows.getCurrent((window) => {
         const height = window.height ?? 50;
         const scrollByY = command === 'scroll_up' ? -height : height;
-        chrome.tabs.query(
-          { currentWindow: true, active: true, highlighted: true },
-          (tabs) => {
-            if (tabs.length === 0 || tabs[0].url?.startsWith('chrome')) return;
 
-            const code = `window.scrollBy({ behavior: 'smooth', top: ${scrollByY} })`;
-            chrome.tabs.executeScript({ code: code }, console.error);
-          }
-        );
-      });
+        // const tab = await browser.tabs.getCurrent();
+        // if (tabs.length === 0 || tabs[0].url?.startsWith('chrome')) return;
+
+        const code = `window.scrollBy({ behavior: 'smooth', top: ${scrollByY} })`;
+        await browser.tabs.executeScript({ code });
+      }
 
       // window.scrollBy({ left: 0, top: scrollByY, behavior: 'smooth' });
     });
