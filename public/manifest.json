@@ -8,6 +8,8 @@
     "48": "logo192.png",
     "128": "logo512.png"
   },
+  "background": { "persistent": true, "page": "background.html" },
+  "options_page": "options.html",
   "manifest_version": 2,
   "name": "Head Tilt Control",
   "permissions": ["tabs", "http://*/*", "https://*/*"],
