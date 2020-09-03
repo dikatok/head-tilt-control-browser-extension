@@ -1,4 +1,4 @@
-import '@tensorflow/tfjs-backend-webgl';
+import { load } from '@tensorflow-models/facemesh';
 import _ from 'highland';
 import React, {
   ReactElement,
@@ -14,10 +14,11 @@ import { calculateTiltDegrees, predictTiltLandmarks } from './utils';
 
 type Command = 'none' | 'scroll_up' | 'scroll_down' | 'next_tab' | 'prev_tab';
 
-const facemesh = require('@tensorflow-models/facemesh');
-
 function App(): ReactElement {
-  const [error, setError] = useState<string>('');
+  const console = useMemo(
+    () => browser.extension.getBackgroundPage().window.console,
+    []
+  );
 
   const videoRef = useRef<HTMLVideoElement>();
 
@@ -79,7 +80,7 @@ function App(): ReactElement {
     });
   }, [queue]);
 
-  controlRef.current = async () => {
+  controlRef.current = async (): Promise<void> => {
     if (capture && model && pivotDeg) {
       const tilt = await predictTiltLandmarks(model, videoRef.current);
 
@@ -107,15 +108,14 @@ function App(): ReactElement {
 
   useEffect(() => {
     const timerId = requestAnimationFrame(controlRef.current);
-    return () => cancelAnimationFrame(timerId);
+    return (): void => cancelAnimationFrame(timerId);
   }, []);
 
   useEffect(() => {
-    facemesh
-      .load({ maxFaces: 1 })
+    load({ maxFaces: 1 })
       .then((loadedModel: any) => {
         setModel(loadedModel);
-        setError('loadded');
+        console.log('model loaded');
       })
       .catch(console.error);
   }, []);
@@ -133,22 +133,22 @@ function App(): ReactElement {
         ></video>
 
         <button
-          onClick={async () => {
+          onClick={async (): Promise<void> => {
             const tilt = await predictTiltLandmarks(model, videoRef.current);
 
             if (!tilt) return;
 
             setPivotDeg(calculateTiltDegrees(tilt));
+
+            console.log('calibrated');
           }}
         >
           Calibrate
         </button>
 
-        <button onClick={() => setCapture(!capture)}>
+        <button onClick={(): void => setCapture(!capture)}>
           {capture ? 'OFF' : 'ON'}
         </button>
-
-        <div>{error as string}</div>
       </header>
     </div>
   );
