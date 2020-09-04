@@ -69,8 +69,6 @@ function App(): ReactElement {
 
   useEffect(() => {
     queue.each(async (command) => {
-      console.log(command);
-
       if (command === 'none' || !browser.tabs || !browser.windows) return;
 
       if (command === 'prev_tab' || command === 'next_tab') {
@@ -80,6 +78,7 @@ function App(): ReactElement {
 
         const currentTabIndex = tabs.findIndex((tab) => tab.active);
         const currentTab = tabs[currentTabIndex];
+        if (currentTab.url?.startsWith('chrome')) return;
         await browser.tabs.update(currentTab.id, {
           highlighted: false,
           active: false
@@ -93,14 +92,17 @@ function App(): ReactElement {
           active: true
         });
       } else {
-        const window = await browser.windows.getCurrent();
+        const tabs = await browser.tabs.query({
+          currentWindow: true,
+          active: true
+        });
 
+        if (tabs.some((tab) => tab.url?.startsWith('chrome'))) return;
+
+        const window = await browser.windows.getCurrent();
         const height = window.height ?? 50;
         const scrollByY = command === 'scroll_up' ? -height : height;
-
-        // const tab = await browser.tabs.getCurrent();
-        // if (tabs.length === 0 || tabs[0].url?.startsWith('chrome')) return;
-
+        console.log(scrollByY);
         const code = `window.scrollBy({ behavior: 'smooth', top: ${scrollByY} })`;
         await browser.tabs.executeScript({ code });
       }
@@ -110,13 +112,8 @@ function App(): ReactElement {
   }, [queue]);
 
   controlRef.current = async (): Promise<void> => {
-    console.log(capture);
-    console.log(!!model);
-    console.log(pivotDeg);
     if (capture && model && pivotDeg) {
       const tilt = await predictTiltLandmarks(model, videoRef.current);
-
-      console.log(tilt);
 
       if (tilt) {
         const { vertical: v, horizontal: h } = calculateTiltDegrees(tilt);
@@ -137,13 +134,14 @@ function App(): ReactElement {
       }
     }
 
-    requestAnimationFrame(controlRef.current);
+    // requestAnimationFrame(controlRef.current);
   };
 
+  //TODO research better alternative since RAF is not supported in bg
   useEffect(() => {
     setInterval(async () => {
       controlRef.current(0);
-    }, 1000);
+    }, 200);
 
     // const timerId = requestAnimationFrame(controlRef.current);
     // console.log(controlRef.current);
