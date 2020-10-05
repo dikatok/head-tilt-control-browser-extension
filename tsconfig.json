@@ -1,9 +1,9 @@
 {
   "compilerOptions": {
     "outDir": "build/dist",
-    "module": "esnext",
+    "module": "commonjs",
     "target": "es5",
-    "lib": ["es6", "dom"],
+    "lib": ["ESNext", "dom"],
     "sourceMap": true,
     "allowJs": true,
     "jsx": "react",
@@ -32,5 +32,5 @@
     "src/setupTests.ts"
   ],
   "types": ["typePatches"],
-  "include": ["src"]
+  "include": ["src", "test.d.ts"]
 }

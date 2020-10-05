@@ -58,6 +58,8 @@ module.exports = {
   appIndexJs: resolveModule(resolveApp, 'src/index'),
   backgroundHtml: resolveApp('public/background.html'),
   backgroundIndexJs: resolveModule(resolveApp, 'src/background'),
+  contentHtml: resolveApp('public/content.html'),
+  contentIndexJs: resolveModule(resolveApp, 'src/content'),
   optionsHtml: resolveApp('public/options.html'),
   optionsIndexJs: resolveModule(resolveApp, 'src/options'),
   appPackageJson: resolveApp('package.json'),

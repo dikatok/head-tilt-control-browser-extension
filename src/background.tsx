@@ -9,7 +9,6 @@ import React, {
 } from 'react';
 import ReactDOM from 'react-dom';
 import { browser } from 'webextension-polyfill-ts';
-import { TiltDegrees } from './types';
 import { calculateTiltDegrees, predictTiltLandmarks } from './utils';
 
 require('@tensorflow/tfjs-backend-webgl');
@@ -17,53 +16,19 @@ require('@tensorflow/tfjs-backend-webgl');
 type Command = 'none' | 'scroll_up' | 'scroll_down' | 'next_tab' | 'prev_tab';
 
 function App(): ReactElement {
-  const controlRef = useRef<FrameRequestCallback>(console.log);
+  window.open('content.html', '', 'height=200,width=200');
 
-  const videoRef = useRef<HTMLVideoElement>();
-
-  const queue = useMemo(() => _<Command>().throttle(1000), []);
-
-  const [pivotDeg, setPivotDeg] = useState<TiltDegrees>();
-
-  const [capture, setCapture] = useState(false);
-
-  const [model, setModel] = useState<any>(null);
-
-  useEffect(() => {
-    load({ maxFaces: 1 })
-      .then((loadedModel: any) => {
-        setModel(loadedModel);
-        console.log('model loaded');
-      })
-      .catch(console.error);
-  }, []);
-
-  useEffect(() => {
-    navigator.mediaDevices.getUserMedia({ video: true }).then((stream) => {
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
-    });
-  }, []);
+  const queue = useMemo(() => _<Command>().throttle(200), []);
 
   useEffect(() => {
     browser.runtime.onMessage.addListener((message, sender) => {
-      console.log(message);
+      // console.log(message);
 
       if (!message || !message['command']) return;
 
-      const { command, payload } = message;
+      const { command } = message;
 
-      switch (command) {
-        case 'setPivot':
-          setPivotDeg(payload);
-          break;
-        case 'setCapture':
-          setCapture(payload);
-          break;
-        default:
-          break;
-      }
+      queue.write(command);
     });
   }, []);
 
@@ -111,56 +76,9 @@ function App(): ReactElement {
     });
   }, [queue]);
 
-  controlRef.current = async (): Promise<void> => {
-    if (capture && model && pivotDeg) {
-      const tilt = await predictTiltLandmarks(model, videoRef.current);
-
-      if (tilt) {
-        const { vertical: v, horizontal: h } = calculateTiltDegrees(tilt);
-
-        const { vertical: vPivot, horizontal: hPivot } = pivotDeg;
-
-        const vDiff = (v - vPivot) * (180 / Math.PI);
-        const hDiff = (h - hPivot) * (180 / Math.PI);
-
-        let command: Command = 'none';
-
-        if (hDiff > 5) command = 'prev_tab';
-        else if (hDiff < -5) command = 'next_tab';
-        else if (vDiff < -5) command = 'scroll_up';
-        else if (vDiff > 5) command = 'scroll_down';
-
-        queue.write(command);
-      }
-    }
-
-    // requestAnimationFrame(controlRef.current);
-  };
-
-  //TODO research better alternative since RAF is not supported in bg
-  useEffect(() => {
-    setInterval(async () => {
-      controlRef.current(0);
-    }, 200);
-
-    // const timerId = requestAnimationFrame(controlRef.current);
-    // console.log(controlRef.current);
-    // console.log(timerId);
-    // return (): void => {
-    //   cancelAnimationFrame(timerId);
-    //   console.log('animation ended');
-    // };
-  }, []);
-
   return (
     <div className="App" style={{ height: 20000 }}>
-      <header className="App-header">
-        <video
-          ref={videoRef as any}
-          style={{ transform: 'rotateY(180deg)' }}
-          autoPlay
-        ></video>
-      </header>
+      <header className="App-header"></header>
     </div>
   );
 }
